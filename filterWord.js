@@ -1,4 +1,4 @@
-import sensitiveWord from './sensitiveWordList';
+import sensitiveWord from './sensitiveWordList.js';
 
 /**
  * @description
@@ -67,7 +67,7 @@ function checkSensitiveWord(sensitiveMap, txt, index) {
         }
     }
     // 两字成词
-    if (wordNum < 2) {
+    if (filterNum < 2) {
         flag = false;
     }
     return { flag, sensitiveWord };
@@ -90,18 +90,39 @@ function filterSensitiveWord(txt, sensitiveMap) {
             txt = txt.replace(new RegExp(matchResult.sensitiveWord, 'gi'), '*');
         }
     }
-    // if()
     // flag为true表示修改了 false为没修改
     return { txt, flag };
 }
+/**
+ * 新增敏感词合并并且去重
+ * @param {Array} newWord
+ * @returns  {newWordList}
+ **/
+function mergeWordList(newWord) {
+    const initWordList = sensitiveWord; //默认词库
+    let result = [];
+    if (newWord && newWord.length > 0) {
+        //合并并且去重
+        const tempWordList = new Set([...newWord, ...initWordList]); //使用set去重
+        result = Array.from(tempWordList); //伪数组转换为数组
+    } else {
+        result = initWordList;
+    }
+    return result;
+}
+
 /**
  * 方法的集合,开箱即用
  * @param {string} filterText
  * @returns  { txt, flag: matchResult.flag };
  */
-export default function TextFilter(filterText, sensitiveWordList = sensitiveWord) {
+export default function TextFilter(filterText, sensitiveWordList) {
+    // 如果有新数组则使用合并且去除重复 没有则不传参,返回默认词库
+    let tempSensitiveWordList =
+        sensitiveWordList.length > 0 ? mergeWordList(sensitiveWordList) : mergeWordList();
     try {
-        return filterSensitiveWord(filterText, makeSensitiveMap(sensitiveWordList));
+        const newSensitiveWordList = makeSensitiveMap(tempSensitiveWordList);
+        return filterSensitiveWord(filterText, newSensitiveWordList);
     } catch (error) {
         if (filterText.length < 1) throw new Error(`The argument passed in cannot be empty`);
         if (typeof filterText !== 'string' && filterText.constructor == String)
